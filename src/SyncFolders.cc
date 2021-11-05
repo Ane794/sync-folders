@@ -1,9 +1,34 @@
-#include <sync-folders/SyncFolders.h>
+#include "SyncFolders.h"
 
-#include <fstream>
 #include <regex>
 #include <iostream>
 #include <yaml-cpp/yaml.h>
+
+int main() {
+    /** 配置文件路径 */
+    const std::string CONF_PATH("config.yml");
+    /** robocopy 参数 */
+    const std::string ROBOCOPY_ARGS("/mir /unicode");
+
+    SyncFolders syncFolders(CONF_PATH, ROBOCOPY_ARGS);
+    if (syncFolders.readConfig()) {
+        syncFolders.generateCommands();
+
+        char choice = 0;
+        while (choice != 'y' && choice != 'n') {
+            std::cout << "Execute? (Y/N):";
+            std::cin >> choice;
+            choice = (char) std::tolower(choice);
+        }
+        if (choice == 'y') {
+            auto code = syncFolders.executeCommands();
+            std::cout << "Finished with exit code " << code << std::endl
+                      << std::endl;
+        }
+    }
+
+    return 0;
+}
 
 SyncFolders::SyncFolders(std::string confPath, std::string robocopyArgs) :
         CONF_PATH(std::move(confPath)),
@@ -13,9 +38,12 @@ SyncFolders::SyncFolders(std::string confPath, std::string robocopyArgs) :
         dirPairs(),
         commands() {}
 
-std::size_t SyncFolders::readConf() {
+std::size_t SyncFolders::readConfig() {
     std::cout << "Reading config file \"" << this->CONF_PATH << "\"..." << std::endl;
+
+    /** 路径的正则表达式 */
     const std::regex PATH_PATTERN(R"([a-zA-Z]:\\.*)");
+
     YAML::Node conf = YAML::LoadFile(this->CONF_PATH);
     for (const auto &group: conf) {
         for (const auto &item: group["dirs"]) {
@@ -36,30 +64,33 @@ std::size_t SyncFolders::readConf() {
                     )
             };
             ++this->total;
-            std::cout << dirPair.src << std::endl
-                      << dirPair.dest << std::endl;
-            if (!std::regex_match(dirPair.src, PATH_PATTERN) || !std::regex_match(dirPair.dest, PATH_PATTERN)) {
-                std::cout << "(Error!)" << std::endl
-                          << std::endl;
-                continue;
+            std::cout << "src:\t" << dirPair.src << std::endl
+                      << "dest:\t" << dirPair.dest << std::endl;
+
+            /* 仅将合法的目录对加入队列. */
+            if (std::regex_match(dirPair.src, PATH_PATTERN) && std::regex_match(dirPair.dest, PATH_PATTERN)) {
+                this->dirPairs.push(dirPair);
+            } else {
+                std::cout << "(INVALID!)" << std::endl;
             }
+
             std::cout << std::endl;
-            this->dirPairs.push(dirPair);
         }
     }
     this->valid = this->dirPairs.size();
-    std::cout << "(" << this->valid << " valid, " << this->total - this->valid << " invalid.)" << std::endl
+    std::cout << "(" << this->valid << "/" << this->total << " valid, "
+              << this->total - this->valid << " invalid.)" << std::endl
               << std::endl;
 
     return this->valid;
 }
 
-bool SyncFolders::generateCommands() {
+void SyncFolders::generateCommands() {
     std::cout << "Generating commands..." << std::endl;
-    this->commands.empty();
-    if (!this->valid) {
-        std::cout << "No valid config! Terminated." << std::endl;
-        return false;
+
+    /* 清空生成的命令. */
+    while (!this->commands.empty()) {
+        this->commands.pop();
     }
 
     while (!this->dirPairs.empty()) {
@@ -71,10 +102,9 @@ bool SyncFolders::generateCommands() {
     }
 
     std::cout << std::endl;
-    return true;
 }
 
-int SyncFolders::execute() {
+int SyncFolders::executeCommands() {
     std::cout << "Executing..." << std::endl;
     int code = 0;
     while (!this->commands.empty()) {

@@ -39,14 +39,20 @@ public:
      */
     SyncFolders(std::string confPath, std::string robocopyArgs);
 
-    /** 读取配置. */
-    size_t readConf();
+    /**
+     * 读取配置
+     * @return 读取的目录对中有效的数量
+     */
+    size_t readConfig();
 
     /** 生成命令. */
-    bool generateCommands();
+    void generateCommands();
 
-    /** 执行命令. */
-    int execute();
+    /**
+     * 执行命令.
+     * @return 最后一次执行的返回值
+     */
+    int executeCommands();
 };
 
 

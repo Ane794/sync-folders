@@ -1,7 +1,5 @@
-cmake_minimum_required(VERSION 3.20)
 project(sync-folders)
-
-set(CMAKE_CXX_STANDARD 23)
+cmake_minimum_required(VERSION 3.15)
 
 include_directories(include)
 link_directories(lib)
