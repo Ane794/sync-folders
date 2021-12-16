@@ -1,6 +1,5 @@
 #include <SyncFolders.h>
 
-#include <fstream>
 #include <regex>
 #include <iostream>
 #include <yaml-cpp/yaml.h>
@@ -88,7 +87,11 @@ std::size_t SyncFolders::readConfig() {
 
 void SyncFolders::generateCommands() {
     std::cout << "Generating commands..." << std::endl;
-    this->commands.empty();
+
+    /* 清空生成的命令. */
+    while (!this->commands.empty()) {
+        this->commands.pop();
+    }
 
     while (!this->dirPairs.empty()) {
         auto dirPair = this->dirPairs.front();
