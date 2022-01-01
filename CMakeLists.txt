@@ -1,7 +1,5 @@
-cmake_minimum_required(VERSION 3.15)
 project(sync-folders)
-
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+cmake_minimum_required(VERSION 3.15)
 
 include_directories(include)
 link_directories(lib)
