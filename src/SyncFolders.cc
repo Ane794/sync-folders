@@ -1,4 +1,4 @@
-#include <SyncFolders.h>
+#include "SyncFolders.h"
 
 #include <regex>
 #include <iostream>
